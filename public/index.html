@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok 4K Video Optimizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white flex items-center justify-center h-screen font-sans">
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+        <h1 class="text-2xl font-bold mb-2">TikTok 4K Optimizer</h1>
+        <p class="text-slate-400 text-sm mb-6">4K videolarınızı TikTok-un keyfiyyət itkisindən qoruyun.</p>
+        
+        <form id="uploadForm" class="space-y-4">
+            <div class="border-2 border-dashed border-slate-700 hover:border-violet-500 rounded-2xl p-6 transition cursor-pointer relative">
+                <input type="file" id="videoFile" accept="video/mp4,video/quicktime" class="absolute inset-0 opacity-0 cursor-pointer" required>
+                <div id="fileLabel" class="text-sm text-slate-300">4K Videonu buraya sürüşdürün və ya seçin</div>
+            </div>
+            <button type="submit" id="submitBtn" class="w-full bg-violet-600 hover:bg-violet-700 py-3 rounded-xl font-semibold transition shadow-lg shadow-violet-600/30">
+                Optimizasiya Et
+            </button>
+        </form>
+
+        <!-- Status və Geriyə Sayım hissəsi -->
+        <div id="statusContainer" class="mt-6 hidden">
+            <div id="timerDisplay" class="text-lg font-mono text-violet-400 font-bold mb-2"></div>
+            <div id="statusText" class="text-sm text-slate-400">Video emal olunur...</div>
+        </div>
+
+        <!-- Endirmə Bölməsi -->
+        <div id="downloadContainer" class="mt-6 hidden">
+            <div class="text-emerald-400 font-medium mb-3">✅ Video uğurla hazırdır!</div>
+            <a id="downloadBtn" href="#" class="inline-block w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition shadow-lg shadow-emerald-600/30" download>
+                Optimallaşdırılmış Videonu Endir
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('videoFile');
+        const fileLabel = document.getElementById('fileLabel');
+        const form = document.getElementById('uploadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusContainer = document.getElementById('statusContainer');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const statusText = document.getElementById('statusText');
+        const downloadContainer = document.getElementById('downloadContainer');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileLabel.textContent = `Seçildi: ${fileInput.files[0].name}`;
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!fileInput.files[0]) return;
+
+            form.classList.add('hidden');
+            statusContainer.classList.remove('hidden');
+
+            let timeLeft = 30;
+            timerDisplay.textContent = `Təxmini qalan vaxt: ${timeLeft}s`;
+
+            const countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerDisplay.textContent = `Təxmini qalan vaxt: ${timeLeft}s`;
+                } else {
+                    timerDisplay.textContent = `Son toxunuşlar edilir...`;
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+
+            const formData = new FormData();
+            formData.append('video', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                clearInterval(countdownInterval);
+
+                if (result.success) {
+                    statusContainer.classList.add('hidden');
+                    downloadContainer.classList.remove('hidden');
+                    downloadBtn.href = result.downloadUrl;
+                } else {
+                    statusContainer.innerHTML = `<span class="text-rose-500">❌ Xəta: ${result.message}</span>`;
+                }
+            } catch (err) {
+                clearInterval(countdownInterval);
+                statusContainer.innerHTML = `<span class="text-rose-500">❌ Serverlə əlaqə qurularkən xəta baş verdi.</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
